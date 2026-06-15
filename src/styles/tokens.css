@@ -1,0 +1,105 @@
+/* ============================================================
+   PAULA — Field Veterinarian App · design tokens + base
+   Coral-red primary · blue informational accent
+   Latin: Poppins · Arabic: Cairo · RTL-safe (logical props)
+   ============================================================ */
+
+:root {
+  /* Brand */
+  --color-primary:        #F0443A;
+  --color-primary-700:    #D5342B;
+  --color-primary-600:    #E83B32;
+  --color-primary-soft:   #FDE9E8;
+  --color-primary-tint:   #FFF4F3;
+
+  --color-blue:           #2E7CD6;
+  --color-blue-700:       #1F5FA8;
+  --color-blue-soft:      #E8F1FB;
+  --color-blue-tint:      #F3F8FE;
+  --color-mint:           var(--color-blue);
+  --color-mint-soft:      var(--color-blue-soft);
+  --color-mint-tint:      var(--color-blue-tint);
+
+  /* Risk scale */
+  --color-risk-low:       #16A34A;
+  --color-risk-low-bg:    #E6F6EC;
+  --color-risk-medium:    #E0A11B;
+  --color-risk-medium-bg: #FBF1DA;
+  --color-risk-high:      #F97316;
+  --color-risk-high-bg:   #FDEBDD;
+  --color-risk-critical:  #DC2626;
+  --color-risk-critical-bg:#FBE3E2;
+
+  --color-offline:        #E0A11B;
+  --color-offline-bg:     #FBF1DA;
+  --color-synced:         #16A34A;
+  --color-synced-bg:      #E6F6EC;
+
+  --kpi-red:    #F0443A;  --kpi-teal:   #14B8A6;  --kpi-orange: #F59E0B;
+  --kpi-blue:   #3B82F6;  --kpi-green:  #22C55E;  --kpi-purple: #8B5CF6;
+
+  /* Neutrals */
+  --color-bg:             #EEF3F8;
+  --color-surface:        #FFFFFF;
+  --color-surface-2:      #F4F7FB;
+  --color-text-primary:   #1E2A38;
+  --color-text-secondary: #647488;
+  --color-text-tertiary:  #93A3B5;
+  --color-border:         #E4E9F1;
+  --color-border-strong:  #D2DAE6;
+
+  /* Type */
+  --font-latin: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-ar:    'Cairo', 'Poppins', sans-serif;
+  --font-app:   var(--font-latin);
+  --font-mono:  'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Radius */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 22px; --r-pill: 999px;
+
+  /* Shadow */
+  --sh-card: 0 1px 2px rgba(30,42,56,.04), 0 4px 16px rgba(30,42,56,.06);
+  --sh-pop:  0 10px 34px rgba(30,42,56,.16);
+  --sh-cta:  0 6px 18px rgba(240,68,58,.30);
+}
+
+/* ar line-height boost */
+[dir='rtl'] { --font-app: var(--font-ar); }
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; margin: 0; padding: 0; }
+body {
+  background: #0e1418;
+  font-family: var(--font-app);
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+}
+button { font-family: inherit; }
+input, textarea { font-family: inherit; }
+
+/* directional icons flip in RTL */
+[dir='rtl'] .flip-rtl { transform: scaleX(-1); }
+
+/* typography helpers */
+.pa-display { font-size: 30px; font-weight: 800; letter-spacing: -.6px; line-height: 1.1; }
+.pa-h1 { font-size: 24px; font-weight: 700; letter-spacing: -.4px; line-height: 1.18; }
+.pa-h2 { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.pa-h3 { font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
+.pa-eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; color: var(--color-text-tertiary); }
+.pa-cap { font-size: 12.5px; color: var(--color-text-secondary); }
+.pa-muted { color: var(--color-text-secondary); }
+.pa-mono { font-family: var(--font-mono); }
+.pa-link { color: var(--color-blue); font-weight: 700; cursor: pointer; }
+[dir='rtl'] .pa-eyebrow { letter-spacing: 0; }
+
+/* layout helpers */
+.row { display: flex; align-items: center; }
+.between { display: flex; align-items: center; justify-content: space-between; }
+.grow { flex: 1 1 auto; min-width: 0; }
+.col { display: flex; flex-direction: column; }
+.gap6 { gap: 6px; } .gap8 { gap: 8px; } .gap10 { gap: 10px; } .gap12 { gap: 12px; } .gap14 { gap: 14px; }
+.nowrap { white-space: nowrap; }
+.center { display: flex; align-items: center; justify-content: center; }
+.divider { height: 1px; background: var(--color-border); border: 0; margin: 0; }
