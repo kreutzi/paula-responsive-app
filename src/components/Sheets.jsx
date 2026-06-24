@@ -3,7 +3,7 @@ import Icon from './Icon';
 import { useT } from '../i18n/useT';
 import { useStore } from '../store/useStore';
 import { useNav } from '../nav/useNav';
-import { LESION_ORGANS, FARMS } from '../data/seed';
+import { LESION_ORGANS, FARMS, MEDICATIONS, VACCINES } from '../data/seed';
 import { farmName } from '../data/helpers';
 
 export default function Sheets() {
@@ -15,6 +15,8 @@ export default function Sheets() {
     <div className={'overlay' + (sheet.type === 'deleteSub' ? ' center' : '')} onClick={closeSheet}>
       <div onClick={stop} style={{ display: 'contents' }}>
         {sheet.type === 'lesionType' && <LesionTypeSheet params={sheet.params} />}
+        {sheet.type === 'medDrug' && <PickSheet titleKey="selectDrug" items={MEDICATIONS} onPick={(it, store, close) => { store.updateMedication(sheet.params.uid, { drugId: it.id, drugName: '' }); close(); }} selected={(s) => s.draft?.medications.find((m) => m.uid === sheet.params.uid)?.drugId} />}
+        {sheet.type === 'vaccine' && <PickSheet titleKey="selectVaccine" items={VACCINES} onPick={(it, store, close) => { store.updateVaccination(sheet.params.farmId, sheet.params.uid, { vaccineId: it.id, vaccineName: '' }); close(); }} selected={(s) => (s.vaccinations[sheet.params.farmId] || []).find((r) => r.uid === sheet.params.uid)?.vaccineId} />}
         {sheet.type === 'deleteSub' && <DeleteDialog params={sheet.params} />}
         {sheet.type === 'historyFilter' && <HistoryFilterSheet />}
       </div>
@@ -41,6 +43,37 @@ function LesionTypeSheet({ params }) {
           const on = entry?.lesionId === it.id;
           return (
             <div key={it.id} className="lrow" style={{ cursor: 'pointer' }} onClick={() => { updateLesion(params.uid, { lesionId: it.id }); closeSheet(); }}>
+              <div className="center" style={{ width: 22, height: 22, borderRadius: 11, border: '2px solid ' + (on ? 'var(--color-primary)' : 'var(--color-border-strong)'), background: on ? 'var(--color-primary)' : 'transparent', flex: '0 0 auto' }}>{on && <Icon name="check" size={13} stroke={3} color="#fff" />}</div>
+              <div className="grow">
+                <div style={{ fontWeight: 700, fontSize: 14.5 }}>{lang === 'ar' ? it.ar : it.en}</div>
+                <div className="pa-cap" dir={lang === 'ar' ? 'ltr' : 'rtl'}>{lang === 'ar' ? it.en : it.ar}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// Generic single-select picker (drug / vaccine) — mirrors the lesion-type sheet.
+function PickSheet({ titleKey, items, onPick, selected }) {
+  const { t, lang } = useT();
+  const store = useStore();
+  const selId = useStore(selected);
+  const closeSheet = useNav((s) => s.closeSheet);
+  return (
+    <div className="sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="sheet-grip" />
+      <div className="between" style={{ marginBottom: 8 }}>
+        <span className="pa-h3">{t(titleKey)}</span>
+        <button className="iconbtn ghost" onClick={closeSheet}><Icon name="x" size={20} /></button>
+      </div>
+      <div style={{ overflowY: 'auto' }}>
+        {items.map((it) => {
+          const on = selId === it.id;
+          return (
+            <div key={it.id} className="lrow" style={{ cursor: 'pointer' }} onClick={() => onPick(it, store, closeSheet)}>
               <div className="center" style={{ width: 22, height: 22, borderRadius: 11, border: '2px solid ' + (on ? 'var(--color-primary)' : 'var(--color-border-strong)'), background: on ? 'var(--color-primary)' : 'transparent', flex: '0 0 auto' }}>{on && <Icon name="check" size={13} stroke={3} color="#fff" />}</div>
               <div className="grow">
                 <div style={{ fontWeight: 700, fontSize: 14.5 }}>{lang === 'ar' ? it.ar : it.en}</div>

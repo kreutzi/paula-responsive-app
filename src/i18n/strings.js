@@ -145,13 +145,36 @@ export const STRINGS = {
     coverageScope: 'Coverage scope', scopeSummary: '{f} farms · {h} houses', saveAssignment: 'Save assignment',
     ofHouses: '{a} of {t} houses',
 
+    // roles
+    signInAs: 'Sign in as', roleFarm: 'Farm staff', roleDoctor: 'Doctor', doctorsOnly: 'Doctors only',
+    roleFarmDesc: 'Records in-house signs', roleDoctorDesc: 'Lesions, medication & vaccination',
+    roleFarmScope: 'Farm observations', roleDoctorScope: 'Lesion observations',
+    routeOfAdmin: 'Route',
+
+    // daily medication (doctor)
+    dailyMeds: 'Daily Medication', medsLabel: 'Medication', nextMeds: 'Next: Medication',
+    addMed: 'Add medication', addMedPrompt: 'Add a medication, or mark none given',
+    noMedsGiven: 'No medication given', drug: 'Drug', selectDrug: 'Select drug',
+    dose: 'Dose', dosePh: 'e.g. 1 mg / L', durationDays: 'Duration (days)', medsN: '{n} medications',
+
+    // vaccination program (doctor, farm-level)
+    vaccination: 'Vaccination Program', vaccinationSub: 'Farm-level immunisation schedule',
+    vaccine: 'Vaccine', selectVaccine: 'Select vaccine', ageDays: 'Age (days)',
+    addVaccine: 'Add vaccine row', noVaccines: 'No vaccination rows yet — add one or import Excel.',
+    vaccForFarm: 'Program · {farm}', vaccinesN: '{n} vaccines',
+
+    // excel import / export
+    addManualOrExcel: 'Add manually, or download / upload an Excel file.',
+    downloadExcel: 'Download Excel', uploadExcel: 'Upload Excel',
+
     // toasts
     t_submitted: 'Observation submitted to Paula', t_queued: 'Saved offline — will sync later',
     t_syncComplete: 'All submissions synced', t_draftSaved: 'Draft saved', t_photoAdded: 'Photo added',
     t_signedOut: 'Signed out', t_markedRead: 'All alerts marked read', t_deleted: 'Submission deleted',
     t_nowOffline: "You're offline — observations will queue", t_nowOnline: 'Back online',
     t_saved: 'Assignment saved', t_cacheCleared: 'Synced cache cleared', t_reset: 'Demo data reset',
-    t_resumeDraft: 'Resumed your saved draft',
+    t_resumeDraft: 'Resumed your saved draft', t_vaccSaved: 'Vaccination program saved',
+    t_imported: '{n} rows imported from Excel', t_nothingImported: 'No rows found in that file',
 
     // severity / risk / misc
     sev_Mild: 'Mild', sev_Moderate: 'Moderate', sev_Severe: 'Severe', sev_Gross: 'Gross',
@@ -283,12 +306,35 @@ export const STRINGS = {
     coverageScope: 'نطاق التغطية', scopeSummary: '{f} مزارع · {h} عنابر', saveAssignment: 'حفظ الإسناد',
     ofHouses: '{a} من {t} عنابر',
 
+    // roles
+    signInAs: 'تسجيل الدخول كـ', roleFarm: 'موظف المزرعة', roleDoctor: 'طبيب', doctorsOnly: 'للأطباء فقط',
+    roleFarmDesc: 'تسجيل الأعراض داخل العنبر', roleDoctorDesc: 'الآفات والأدوية والتحصين',
+    roleFarmScope: 'ملاحظات المزرعة', roleDoctorScope: 'ملاحظات الآفات',
+    routeOfAdmin: 'طريقة الإعطاء',
+
+    // daily medication (doctor)
+    dailyMeds: 'الأدوية اليومية', medsLabel: 'الأدوية', nextMeds: 'التالي: الأدوية',
+    addMed: 'إضافة دواء', addMedPrompt: 'أضف دواءً، أو حدّد عدم الإعطاء',
+    noMedsGiven: 'لم تُعطَ أدوية', drug: 'الدواء', selectDrug: 'اختر الدواء',
+    dose: 'الجرعة', dosePh: 'مثال: ١ مجم / لتر', durationDays: 'المدة (أيام)', medsN: '{n} أدوية',
+
+    // vaccination program (doctor, farm-level)
+    vaccination: 'برنامج التحصين', vaccinationSub: 'جدول التحصين على مستوى المزرعة',
+    vaccine: 'اللقاح', selectVaccine: 'اختر اللقاح', ageDays: 'العمر (أيام)',
+    addVaccine: 'إضافة صف لقاح', noVaccines: 'لا توجد صفوف تحصين بعد — أضف صفاً أو استورد ملف Excel.',
+    vaccForFarm: 'البرنامج · {farm}', vaccinesN: '{n} لقاحات',
+
+    // excel import / export
+    addManualOrExcel: 'الإضافة يدوياً، أو تنزيل / رفع ملف Excel.',
+    downloadExcel: 'تنزيل Excel', uploadExcel: 'رفع Excel',
+
     t_submitted: 'تم إرسال الملاحظة إلى Paula', t_queued: 'حُفظت دون اتصال — ستتم المزامنة لاحقاً',
     t_syncComplete: 'تمت مزامنة كل العمليات', t_draftSaved: 'تم حفظ المسودة', t_photoAdded: 'تمت إضافة الصورة',
     t_signedOut: 'تم تسجيل الخروج', t_markedRead: 'تم تعليم كل التنبيهات كمقروءة', t_deleted: 'تم حذف الإرسال',
     t_nowOffline: 'أنت غير متصل — ستُوضع الملاحظات في الانتظار', t_nowOnline: 'عاد الاتصال',
     t_saved: 'تم حفظ الإسناد', t_cacheCleared: 'تم مسح الذاكرة المؤقتة', t_reset: 'تمت إعادة تعيين البيانات',
-    t_resumeDraft: 'تم استئناف مسودتك المحفوظة',
+    t_resumeDraft: 'تم استئناف مسودتك المحفوظة', t_vaccSaved: 'تم حفظ برنامج التحصين',
+    t_imported: 'تم استيراد {n} صفوف من Excel', t_nothingImported: 'لم يتم العثور على صفوف في الملف',
 
     sev_Mild: 'خفيف', sev_Moderate: 'متوسط', sev_Severe: 'شديد', sev_Gross: 'جسيم',
     risk_low: 'خطر منخفض', risk_medium: 'خطر متوسط', risk_high: 'خطر مرتفع', risk_critical: 'حرج',

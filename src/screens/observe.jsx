@@ -4,8 +4,10 @@ import Icon from '../components/Icon';
 import { useT } from '../i18n/useT';
 import { useStore } from '../store/useStore';
 import { useNav } from '../nav/useNav';
-import { SIGN_CATEGORIES, LESION_ORGANS } from '../data/seed';
-import { placeLabel, signName, lesionName } from '../data/helpers';
+import { SIGN_CATEGORIES, LESION_ORGANS, ROUTES } from '../data/seed';
+import { placeLabel, signName, lesionName, medName, routeName } from '../data/helpers';
+import { downloadSheet, pickSheet } from '../data/excel';
+import { selRole } from '../store/useStore';
 
 const SEV_RISK = { Mild: 'low', Moderate: 'medium', Severe: 'high', Gross: 'critical' };
 const SIGN_CAT_KEYS = SIGN_CATEGORIES.map((c) => c.key);
@@ -61,7 +63,7 @@ export function Signs() {
   return (
     <Screen>
       <Header title={t('inHouseSigns')} back right={<SaveDraftBtn />} />
-      <div style={{ padding: '0 20px 10px' }}><Steps current={0} /></div>
+      <div style={{ padding: '0 20px 10px' }}><Steps route="signs" /></div>
       <div className="body pad">
         <div className="body-inner">
           <div className="card card-pad between" style={{ marginBottom: 12, padding: '12px 16px' }}>
@@ -83,7 +85,7 @@ export function Signs() {
       </div>
       <div className="fab-area" style={{ display: 'flex', gap: 10 }}>
         <span className="badge badge-neutral" style={{ alignSelf: 'center', padding: '8px 12px' }}>{t('selectedN', { n: selectedCount })}</span>
-        <Button iconRight="arrow-right" style={{ flex: 1 }} onClick={() => push('lesions')}>{t('nextLesions')}</Button>
+        <Button iconRight="arrow-right" style={{ flex: 1 }} onClick={() => push('notes')}>{t('nextNotes')}</Button>
       </div>
     </Screen>
   );
@@ -136,7 +138,7 @@ export function Lesions() {
   return (
     <Screen>
       <Header title={t('pmLesions')} back right={<SaveDraftBtn />} />
-      <div style={{ padding: '0 20px 10px' }}><Steps current={1} /></div>
+      <div style={{ padding: '0 20px 10px' }}><Steps route="lesions" /></div>
       <div className="chips-scroll" style={{ padding: '0 20px 12px' }}>
         {ORGAN_KEYS.map((k) => <Chip key={k} on={organ === k} onClick={() => setOrgan(k)}>{t('org_' + k)}</Chip>)}
       </div>
@@ -157,6 +159,89 @@ export function Lesions() {
                 onDelete={() => removeLesion(e.uid)} />
             ))}
             <button className="btn btn-secondary" style={{ height: 46 }} onClick={() => addLesion(organ)}><Icon name="plus" size={19} stroke={2.4} />{t('addAnother')}</button>
+          </div>
+        </div>
+      </div>
+      <div className="fab-area"><Button iconRight="arrow-right" onClick={() => push('medication')}>{t('nextMeds')}</Button></div>
+    </Screen>
+  );
+}
+
+/* ===== 8b. Daily Medication (doctor-only, house-level) ===== */
+function MedEntry({ entry, onPickDrug, onDose, onRoute, onDays, onDelete }) {
+  const { t, lang } = useT();
+  const name = entry.drugId ? medName(entry.drugId, lang) : (entry.drugName || null);
+  return (
+    <div className="card card-pad" style={{ padding: 14, marginBottom: 10 }}>
+      <div className="between" style={{ marginBottom: 10 }}>
+        <span className="pa-eyebrow">{t('drug')}</span>
+        <button className="iconbtn ghost" style={{ width: 28, height: 28 }} onClick={onDelete}><Icon name="trash" size={17} color="var(--color-text-tertiary)" /></button>
+      </div>
+      <button className="input" style={{ height: 44, width: '100%', cursor: 'pointer', marginBottom: 10 }} onClick={onPickDrug}>
+        <span className="grow" style={{ fontWeight: 600, textAlign: 'start', color: name ? 'var(--color-text-primary)' : 'var(--color-text-tertiary)' }}>{name || t('selectDrug')}</span>
+        <Icon name="chevron-down" size={18} color="var(--color-text-tertiary)" />
+      </button>
+      <div className="between" style={{ gap: 12, marginBottom: 10 }}>
+        <label className="grow"><div className="pa-eyebrow" style={{ marginBottom: 5 }}>{t('dose')}</div>
+          <input className="input" dir="auto" style={{ height: 42, width: '100%' }} placeholder={t('dosePh')} value={entry.dose} onChange={(e) => onDose(e.target.value)} />
+        </label>
+        <div><div className="pa-eyebrow" style={{ marginBottom: 5 }}>{t('durationDays')}</div><Stepper value={entry.days} min={1} onChange={onDays} /></div>
+      </div>
+      <div className="pa-eyebrow" style={{ marginBottom: 5 }}>{t('routeOfAdmin')}</div>
+      <div className="chips-scroll">
+        {ROUTES.map((r) => <Chip key={r.id} on={entry.routeId === r.id} onClick={() => onRoute(r.id)}>{lang === 'ar' ? r.ar : r.en}</Chip>)}
+      </div>
+    </div>
+  );
+}
+
+export function Medication() {
+  const { t, num } = useT();
+  const { push, openSheet } = useNav();
+  const draft = useStore((s) => s.draft);
+  const ensureDraft = useStore((s) => s.ensureDraft);
+  const addMedication = useStore((s) => s.addMedication);
+  const updateMedication = useStore((s) => s.updateMedication);
+  const removeMedication = useStore((s) => s.removeMedication);
+  const toggleNoneMeds = useStore((s) => s.toggleNoneMeds);
+  const importMedications = useStore((s) => s.importMedications);
+  const toast = useStore((s) => s.toast);
+  useEffect(() => { ensureDraft(); }, [ensureDraft]);
+  if (!draft) return <Screen><Header title={t('dailyMeds')} back /></Screen>;
+
+  const meds = draft.medications || [];
+  const onUpload = () => pickSheet((rows) => {
+    if (!rows.length) { toast('t_nothingImported', 'info'); return; }
+    importMedications(rows); toast('t_imported', 'ok', { n: rows.length });
+  });
+  const onDownload = () => downloadSheet('daily-medication-template', ['drug', 'dose', 'route', 'days'],
+    meds.length ? meds.map((m) => ({ drug: m.drugId ? medName(m.drugId, 'en') : (m.drugName || ''), dose: m.dose, route: m.routeId, days: m.days })) : [{ drug: 'Florfenicol', dose: '1 mg/L', route: 'water', days: 3 }]);
+
+  return (
+    <Screen>
+      <Header title={t('dailyMeds')} back right={<SaveDraftBtn />} />
+      <div style={{ padding: '0 20px 10px' }}><Steps route="medication" /></div>
+      <div className="body pad">
+        <div className="body-inner">
+          <div className="card card-pad between" style={{ marginBottom: 12, padding: '12px 16px' }}>
+            <div><div style={{ fontWeight: 700, fontSize: 14 }}>{t('noMedsGiven')}</div><div className="pa-cap">{t('recordClean')}</div></div>
+            <Switch on={draft.noneMeds} onChange={toggleNoneMeds} />
+          </div>
+          <div style={{ opacity: draft.noneMeds ? 0.4 : 1, pointerEvents: draft.noneMeds ? 'none' : 'auto' }}>
+            <div className="row" style={{ gap: 8, marginBottom: 12 }}>
+              <button className="btn btn-outline btn-sm grow" onClick={onDownload}><Icon name="download" size={16} />{t('downloadExcel')}</button>
+              <button className="btn btn-outline btn-sm grow" onClick={onUpload}><Icon name="file-text" size={16} />{t('uploadExcel')}</button>
+            </div>
+            {meds.length === 0 && <div className="pa-cap" style={{ textAlign: 'center', padding: '4px 0 14px' }}>{t('addMedPrompt')}</div>}
+            {meds.map((m) => (
+              <MedEntry key={m.uid} entry={m}
+                onPickDrug={() => openSheet('medDrug', { uid: m.uid })}
+                onDose={(v) => updateMedication(m.uid, { dose: v })}
+                onRoute={(v) => updateMedication(m.uid, { routeId: v })}
+                onDays={(v) => updateMedication(m.uid, { days: v })}
+                onDelete={() => removeMedication(m.uid)} />
+            ))}
+            <button className="btn btn-secondary" style={{ height: 46 }} onClick={addMedication}><Icon name="plus" size={19} stroke={2.4} />{t('addMed')}</button>
           </div>
         </div>
       </div>
@@ -271,7 +356,7 @@ export function Notes() {
   return (
     <Screen>
       <Header title={t('notes')} sub={t('optional')} back />
-      <div style={{ padding: '0 20px 12px' }}><Steps current={2} /></div>
+      <div style={{ padding: '0 20px 12px' }}><Steps route="notes" /></div>
       <div className="body pad">
         <div className="body-inner" style={{ display: 'flex', flexDirection: 'column', minHeight: 320 }}>
           <div className="segmented" style={{ marginBottom: 12 }}>
@@ -320,11 +405,16 @@ export function Summary() {
   const [showFull, setShowFull] = useState(false);
   if (!draft) return <Screen><Header title={t('reviewObs')} back /></Screen>;
 
+  const role = useStore(selRole);
+  const isDoctor = role === 'doctor';
   const signEntries = Object.entries(draft.signs);
   const lesionEntries = draft.lesions.filter((l) => l.lesionId);
+  const medEntries = (draft.medications || []).filter((m) => m.drugId || m.drugName);
   const photoCount = signEntries.reduce((a, [, v]) => a + (v.photos || 0), 0) + lesionEntries.reduce((a, l) => a + (l.photos || 0), 0);
   const sizeMB = (0.4 + photoCount * 0.45).toFixed(1);
-  const hasContent = signEntries.length > 0 || lesionEntries.length > 0 || draft.noneSigns || draft.noneLesions;
+  const hasContent = isDoctor
+    ? (lesionEntries.length > 0 || draft.noneLesions || medEntries.length > 0 || draft.noneMeds)
+    : (signEntries.length > 0 || draft.noneSigns);
   const note = draft.notes;
   const noteTrunc = note.length > 90 && !showFull ? note.slice(0, 90) + '… ' : note;
 
@@ -333,7 +423,7 @@ export function Summary() {
   return (
     <Screen>
       <Header title={t('reviewObs')} back />
-      <div style={{ padding: '0 20px 12px' }}><Steps current={3} /></div>
+      <div style={{ padding: '0 20px 12px' }}><Steps route="summary" /></div>
       <div className="body pad">
         <div className="body-inner">
           <div className="card card-pad row" style={{ gap: 12, marginBottom: 10, background: 'var(--color-blue-tint)', borderColor: 'var(--color-blue)' }}>
@@ -341,27 +431,44 @@ export function Summary() {
             <div className="grow"><div style={{ fontWeight: 800, fontSize: 15 }}>{placeLabel(draft.farmId, draft.houseId, t, lang)}</div><div className="pa-cap">{lang === 'ar' ? '١٢ مايو' : '12 May'} · {draft.startedTime} · {lang === 'ar' ? 'د. حسام' : 'Dr. Hossam'}</div></div>
           </div>
 
-          <SumSection icon="activity" title={t('signLabel')} count={draft.noneSigns ? 0 : signEntries.length} editTo="signs">
-            {draft.noneSigns && <div className="pa-cap">{t('noneObserved')}</div>}
-            {!draft.noneSigns && signEntries.length === 0 && <div className="pa-cap">{t('none')}</div>}
-            {!draft.noneSigns && signEntries.map(([id, v], i) => (
-              <div key={id} className="between" style={{ marginTop: i ? 8 : 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{signName(id, lang)}</span>
-                <span className="row gap8"><span className={'badge risk-' + SEV_RISK[v.sev]}>{t('sev_' + v.sev)}</span>{v.photos > 0 && <span className="pa-cap row" style={{ gap: 3 }}><Icon name="camera" size={14} />{num(v.photos)}</span>}</span>
-              </div>
-            ))}
-          </SumSection>
+          {!isDoctor && (
+            <SumSection icon="activity" title={t('signLabel')} count={draft.noneSigns ? 0 : signEntries.length} editTo="signs">
+              {draft.noneSigns && <div className="pa-cap">{t('noneObserved')}</div>}
+              {!draft.noneSigns && signEntries.length === 0 && <div className="pa-cap">{t('none')}</div>}
+              {!draft.noneSigns && signEntries.map(([id, v], i) => (
+                <div key={id} className="between" style={{ marginTop: i ? 8 : 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{signName(id, lang)}</span>
+                  <span className="row gap8"><span className={'badge risk-' + SEV_RISK[v.sev]}>{t('sev_' + v.sev)}</span>{v.photos > 0 && <span className="pa-cap row" style={{ gap: 3 }}><Icon name="camera" size={14} />{num(v.photos)}</span>}</span>
+                </div>
+              ))}
+            </SumSection>
+          )}
 
-          <SumSection icon="bug" title={t('lesionLabel')} count={draft.noneLesions ? 0 : lesionEntries.length} editTo="lesions">
-            {draft.noneLesions && <div className="pa-cap">{t('noLesions')}</div>}
-            {!draft.noneLesions && lesionEntries.length === 0 && <div className="pa-cap">{t('none')}</div>}
-            {!draft.noneLesions && lesionEntries.map((l, i) => (
-              <div key={l.uid} className="between" style={{ marginTop: i ? 8 : 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{lesionName(l.lesionId, lang)} <span className="pa-muted" style={{ fontWeight: 500 }}>· ×{num(l.count)}</span></span>
-                <span className="row gap8"><span className={'badge risk-' + SEV_RISK[l.sev]}>{t('sev_' + l.sev)}</span>{l.photos > 0 && <span className="pa-cap row" style={{ gap: 3 }}><Icon name="camera" size={14} />{num(l.photos)}</span>}</span>
-              </div>
-            ))}
-          </SumSection>
+          {isDoctor && (
+            <SumSection icon="bug" title={t('lesionLabel')} count={draft.noneLesions ? 0 : lesionEntries.length} editTo="lesions">
+              {draft.noneLesions && <div className="pa-cap">{t('noLesions')}</div>}
+              {!draft.noneLesions && lesionEntries.length === 0 && <div className="pa-cap">{t('none')}</div>}
+              {!draft.noneLesions && lesionEntries.map((l, i) => (
+                <div key={l.uid} className="between" style={{ marginTop: i ? 8 : 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{lesionName(l.lesionId, lang)} <span className="pa-muted" style={{ fontWeight: 500 }}>· ×{num(l.count)}</span></span>
+                  <span className="row gap8"><span className={'badge risk-' + SEV_RISK[l.sev]}>{t('sev_' + l.sev)}</span>{l.photos > 0 && <span className="pa-cap row" style={{ gap: 3 }}><Icon name="camera" size={14} />{num(l.photos)}</span>}</span>
+                </div>
+              ))}
+            </SumSection>
+          )}
+
+          {isDoctor && (
+            <SumSection icon="droplet" title={t('dailyMeds')} count={draft.noneMeds ? 0 : medEntries.length} editTo="medication">
+              {draft.noneMeds && <div className="pa-cap">{t('noMedsGiven')}</div>}
+              {!draft.noneMeds && medEntries.length === 0 && <div className="pa-cap">{t('none')}</div>}
+              {!draft.noneMeds && medEntries.map((m, i) => (
+                <div key={m.uid} className="between" style={{ marginTop: i ? 8 : 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{m.drugId ? medName(m.drugId, lang) : m.drugName}{m.dose ? <span className="pa-muted" style={{ fontWeight: 500 }}> · {m.dose}</span> : null}</span>
+                  <span className="pa-cap">{routeName(m.routeId, lang)} · {num(m.days)}d</span>
+                </div>
+              ))}
+            </SumSection>
+          )}
 
           <SumSection icon="file-text" title={t('notesLabel')} editTo="notes">
             {note ? (

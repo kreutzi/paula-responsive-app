@@ -55,16 +55,31 @@ export function Login() {
   const signIn = useStore((s) => s.signIn);
   const setLang = useStore((s) => s.setLang);
   const { resetTo, push } = useNav();
+  const [role, setRole] = useState('doctor');
 
-  const doLogin = () => { signIn(); resetTo('home'); };
+  const doLogin = () => { signIn(role); resetTo('home'); };
 
   return (
     <Screen>
       <div className="body pad" style={{ background: 'var(--color-surface)', padding: '0 26px' }}>
         <div style={{ paddingTop: 40, paddingBottom: 26, display: 'flex', justifyContent: 'center' }}><Logo size={168} /></div>
         <div className="pa-h1" style={{ marginBottom: 8 }}>{t('welcome')}</div>
-        <p className="pa-muted" style={{ fontSize: 15, marginBottom: 26 }}>{t('loginSub')}</p>
-        <Button icon="shield" onClick={() => push('sso')}>{t('signInCairo')}</Button>
+        <p className="pa-muted" style={{ fontSize: 15, marginBottom: 18 }}>{t('loginSub')}</p>
+
+        <div className="pa-eyebrow" style={{ marginBottom: 8 }}>{t('signInAs')}</div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 20 }}>
+          {[['farm', 'user'], ['doctor', 'shield']].map(([r, ic]) => (
+            <button key={r} onClick={() => setRole(r)} className="card card-pad" style={{ flex: 1, textAlign: 'start', cursor: 'pointer', borderWidth: 1.5, borderColor: role === r ? 'var(--color-primary)' : 'var(--color-border)', background: role === r ? 'var(--color-primary-tint)' : 'var(--color-surface)' }}>
+              <div className="row gap8" style={{ marginBottom: 4 }}>
+                <Icon name={ic} size={18} color={role === r ? 'var(--color-primary)' : 'var(--color-text-secondary)'} />
+                <span style={{ fontWeight: 800, fontSize: 14 }}>{t(r === 'farm' ? 'roleFarm' : 'roleDoctor')}</span>
+              </div>
+              <div className="pa-cap">{t(r === 'farm' ? 'roleFarmDesc' : 'roleDoctorDesc')}</div>
+            </button>
+          ))}
+        </div>
+
+        <Button icon="shield" onClick={() => push('sso', { role })}>{t('signInCairo')}</Button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' }}>
           <div className="divider grow" /><span className="pa-cap">{t('or')}</span><div className="divider grow" />
         </div>
@@ -97,6 +112,7 @@ export function SSO() {
   const { t } = useT();
   const signIn = useStore((s) => s.signIn);
   const { resetTo, pop } = useNav();
+  const role = useNav((s) => s.stack[s.stack.length - 1].params.role) || 'doctor';
   const [email, setEmail] = useState(VET.email);
   const [pw, setPw] = useState('paula-demo');
   const [showPw, setShowPw] = useState(false);
@@ -109,7 +125,7 @@ export function SSO() {
     if (!valid || authing) { setError(t('ssoErr')); return; }
     setError('');
     setAuthing(true);
-    setTimeout(() => { signIn(); resetTo('home'); }, 1100);
+    setTimeout(() => { signIn(role); resetTo('home'); }, 1100);
   };
 
   return (

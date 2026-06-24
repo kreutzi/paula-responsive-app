@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { INITIAL_SUBMISSIONS, NOTIFICATIONS, HOUSE_BY_ID, FARM_BY_ID } from '../data/seed';
+import { INITIAL_SUBMISSIONS, NOTIFICATIONS, HOUSE_BY_ID, FARM_BY_ID, INITIAL_VACCINATIONS } from '../data/seed';
 
 let _idn = 1000;
 function genId() {
@@ -25,6 +25,7 @@ function freshDraft(farmId, houseId) {
     farmId, houseId, startedAt: Date.now(), startedTime: nowTime(),
     noneSigns: false, signs: {},
     noneLesions: false, lesions: [],
+    noneMeds: false, medications: [], // doctor-only daily medication (house-level)
     notes: '',
   };
 }
@@ -35,11 +36,12 @@ function placeName(farmId, houseId) {
 }
 
 const initial = {
-  session: { signedIn: false },
+  session: { signedIn: false, role: null }, // role: 'farm' | 'doctor'
   settings: { lang: 'en', notifications: true, alertThreshold: 'perFarm' },
   online: false, // start offline to match the splash "pending sync" story
   submissions: INITIAL_SUBMISSIONS,
   notifications: NOTIFICATIONS,
+  vaccinations: INITIAL_VACCINATIONS, // { [farmId]: [ {uid, vaccineId, ageDay, routeId} ] }
   visit: null,        // { farmId, houseId }
   draft: null,        // observation in progress
   lastSubmission: null,
@@ -62,8 +64,8 @@ export const useStore = create(
       dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 
       // ---- session ----
-      signIn: () => set({ session: { signedIn: true } }),
-      signOut: () => { set({ session: { signedIn: false }, visit: null, draft: null }); get().toast('t_signedOut', 'info'); },
+      signIn: (role = 'farm') => set({ session: { signedIn: true, role } }),
+      signOut: () => { set({ session: { signedIn: false, role: null }, visit: null, draft: null }); get().toast('t_signedOut', 'info'); },
 
       // ---- settings / connectivity ----
       setLang: (lang) => set((s) => ({ settings: { ...s.settings, lang } })),
@@ -108,6 +110,23 @@ export const useStore = create(
       // ---- notes ----
       setNotes: (notes) => set((s) => ({ draft: { ...s.draft, notes: notes.slice(0, 1000) } })),
 
+      // ---- daily medication (doctor-only, house-level) ----
+      toggleNoneMeds: () => set((s) => ({ draft: { ...s.draft, noneMeds: !s.draft.noneMeds, medications: !s.draft.noneMeds ? [] : s.draft.medications } })),
+      addMedication: () => set((s) => {
+        const uid = 'mx' + (s.draft.medications.length + 1) + '-' + (Date.now() % 100000);
+        return { draft: { ...s.draft, noneMeds: false, medications: [...s.draft.medications, { uid, drugId: null, dose: '', routeId: 'water', days: 1 }] } };
+      }),
+      updateMedication: (uid, patch) => set((s) => ({ draft: { ...s.draft, medications: s.draft.medications.map((m) => (m.uid === uid ? { ...m, ...patch } : m)) } })),
+      removeMedication: (uid) => set((s) => ({ draft: { ...s.draft, medications: s.draft.medications.filter((m) => m.uid !== uid) } })),
+      importMedications: (rows) => set((s) => {
+        const meds = rows.map((r, i) => ({
+          uid: 'mi' + i + '-' + (Date.now() % 100000),
+          drugId: r.drugId || null, drugName: r.drug || r.drugName || '',
+          dose: r.dose || '', routeId: r.routeId || r.route || 'water', days: +(r.days || r.duration || 1) || 1,
+        }));
+        return { draft: { ...s.draft, noneMeds: false, medications: [...s.draft.medications, ...meds] } };
+      }),
+
       // ---- camera / photos ----
       setCameraCtx: (ctx) => set({ cameraCtx: ctx }),
       capturePhoto: () => set((s) => {
@@ -130,16 +149,17 @@ export const useStore = create(
 
       // ---- submit ----
       submitVisit: () => {
-        const { draft, online, submissions } = get();
+        const { draft, online, submissions, session } = get();
         if (!draft) return null;
         const signs = Object.entries(draft.signs).map(([id, v]) => ({ id, sev: v.sev, photos: v.photos }));
         const lesions = draft.lesions.filter((l) => l.lesionId).map((l) => ({ id: l.lesionId, organ: l.organ, sev: l.sev, count: l.count, photos: l.photos }));
+        const meds = (draft.medications || []).filter((m) => m.drugId || m.drugName).map((m) => ({ drugId: m.drugId, drugName: m.drugName || '', dose: m.dose, routeId: m.routeId, days: m.days }));
         const photoCount = signs.reduce((a, s) => a + (s.photos || 0), 0) + lesions.reduce((a, l) => a + (l.photos || 0), 0);
         const sizeMB = +(0.4 + photoCount * 0.45).toFixed(1);
         const sub = {
           id: genId(), farmId: draft.farmId, houseId: draft.houseId, vet: 'Dr. Hossam Fawzy', vetAr: 'د. حسام فوزي',
-          when: nowLabel(), time: nowTime(), ts: Date.now(),
-          status: online ? 'synced' : 'queued', signs, lesions, notes: draft.notes, photoCount, sizeMB,
+          when: nowLabel(), time: nowTime(), ts: Date.now(), role: session.role || 'farm',
+          status: online ? 'synced' : 'queued', signs, lesions, meds, notes: draft.notes, photoCount, sizeMB,
         };
         set({ submissions: [sub, ...submissions], lastSubmission: sub, draft: null });
         get().toast(online ? 't_submitted' : 't_queued', online ? 'ok' : 'info');
@@ -162,15 +182,38 @@ export const useStore = create(
       markAllRead: () => { set((s) => ({ notifications: s.notifications.map((n) => ({ ...n, unread: false })) })); get().toast('t_markedRead', 'ok'); },
       markRead: (id) => set((s) => ({ notifications: s.notifications.map((n) => (n.id === id ? { ...n, unread: false } : n)) })),
 
+      // ---- vaccination program (doctor-only, farm-level) ----
+      addVaccination: (farmId) => set((s) => {
+        const rows = s.vaccinations[farmId] || [];
+        const uid = 'vx-' + farmId + '-' + (rows.length + 1) + '-' + (Date.now() % 100000);
+        return { vaccinations: { ...s.vaccinations, [farmId]: [...rows, { uid, vaccineId: null, ageDay: 1, routeId: 'water' }] } };
+      }),
+      updateVaccination: (farmId, uid, patch) => set((s) => ({
+        vaccinations: { ...s.vaccinations, [farmId]: (s.vaccinations[farmId] || []).map((r) => (r.uid === uid ? { ...r, ...patch } : r)) },
+      })),
+      removeVaccination: (farmId, uid) => set((s) => ({
+        vaccinations: { ...s.vaccinations, [farmId]: (s.vaccinations[farmId] || []).filter((r) => r.uid !== uid) },
+      })),
+      importVaccinations: (farmId, rows) => set((s) => {
+        const mapped = rows.map((r, i) => ({
+          uid: 'vi-' + farmId + '-' + i + '-' + (Date.now() % 100000),
+          vaccineId: r.vaccineId || null, vaccineName: r.vaccine || r.vaccineName || '',
+          ageDay: +(r.ageDay || r.age || 1) || 1, routeId: r.routeId || r.route || 'water',
+        }));
+        return { vaccinations: { ...s.vaccinations, [farmId]: [...(s.vaccinations[farmId] || []), ...mapped] } };
+      }),
+      saveVaccinations: () => get().toast('t_vaccSaved', 'ok'),
+
       // ---- maintenance ----
       clearSyncedCache: () => { set((s) => ({ submissions: s.submissions.filter((x) => x.status !== 'synced') })); get().toast('t_cacheCleared', 'info'); },
-      resetDemo: () => { set({ ...initial, session: { signedIn: true }, toasts: [] }); get().toast('t_reset', 'info'); },
+      resetDemo: () => { set({ ...initial, session: { signedIn: true, role: get().session.role || 'doctor' }, toasts: [] }); get().toast('t_reset', 'info'); },
     }),
     {
-      name: 'paula-field-vet',
+      name: 'paula-field-vet-v2', // bumped: session now carries a role
       partialize: (s) => ({
         session: s.session, settings: s.settings, online: s.online,
-        submissions: s.submissions, notifications: s.notifications, visit: s.visit, draft: s.draft,
+        submissions: s.submissions, notifications: s.notifications, vaccinations: s.vaccinations,
+        visit: s.visit, draft: s.draft,
       }),
     }
   )
@@ -179,4 +222,6 @@ export const useStore = create(
 // derived selectors
 export const selPendingCount = (s) => s.submissions.filter((x) => x.status === 'queued').length;
 export const selUnreadCount = (s) => s.notifications.filter((n) => n.unread).length;
+export const selRole = (s) => s.session.role || 'farm';
+export const selIsDoctor = (s) => (s.session.role || 'farm') === 'doctor';
 export const placeNameFor = placeName;

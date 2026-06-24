@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Screen, Header, Button, RiskBadge, FlockPill, ServiceDay, RISK_DOT, Empty } from '../components/ui';
 import Icon from '../components/Icon';
 import { useT } from '../i18n/useT';
-import { useStore } from '../store/useStore';
+import { useStore, selRole } from '../store/useStore';
 import { useNav } from '../nav/useNav';
+import { firstFlowRoute } from '../nav/flow';
 import { FARMS } from '../data/seed';
 import { farmName, farmRegion, house as getHouse, placeLabel, digits } from '../data/helpers';
 
@@ -152,13 +153,14 @@ export function VisitOverview() {
   const { push } = useNav();
   const visit = useStore((s) => s.visit);
   const startDraft = useStore((s) => s.startDraft);
+  const role = useStore(selRole);
   if (!visit) return <Screen><Header title={t('selectFarmHouse')} back /></Screen>;
   const h = getHouse(visit.houseId);
   const p = h.prediction;
   const trendKey = p.trend; // worsening | improving | stable
   const trendIcon = p.trend === 'improving' ? 'trend-down' : 'trend-up';
 
-  const start = () => { startDraft(); push('signs'); };
+  const start = () => { startDraft(); push(firstFlowRoute(role)); };
   const statusBadge = (st) => st === 'critical' ? ['risk-critical', t('critical')] : st === 'flagged' ? ['risk-medium', t('flagged')] : ['badge-synced', t('normal')];
   const tests = [['ELISA', 'var(--kpi-red)'], ['HI', 'var(--kpi-teal)'], ['PCR', 'var(--kpi-blue)'], ['MICRO', 'var(--kpi-orange)']];
 

@@ -4,7 +4,7 @@ import Icon from '../components/Icon';
 import { useT } from '../i18n/useT';
 import { useStore, selPendingCount } from '../store/useStore';
 import { useNav } from '../nav/useNav';
-import { farmName, houseNo, placeLabel, signName, lesionName, digits, relTime } from '../data/helpers';
+import { farmName, houseNo, placeLabel, signName, lesionName, medName, routeName, digits, relTime } from '../data/helpers';
 
 /* ===== 14. Offline Queue ===== */
 function QueueItem({ sub, syncing, onDelete }) {
@@ -161,16 +161,29 @@ export function Detail() {
             </div>
           </div>
 
-          <div className="card card-pad" style={{ marginBottom: 10 }}>
-            <div className="pa-eyebrow" style={{ marginBottom: 8 }}>{t('signLabel')} · {num(sub.signs.length)}</div>
-            {sub.signs.length === 0 && <div className="pa-cap">{t('none')}</div>}
-            {sub.signs.map((s, i) => (
-              <div key={i} className="between" style={{ marginTop: i ? 8 : 0 }}>
-                <span style={{ fontWeight: 600, fontSize: 14 }}>{signName(s.id, lang)}</span>
-                <span className="badge risk-medium">{t('sev_' + s.sev)}</span>
-              </div>
-            ))}
-          </div>
+          {sub.signs.length > 0 && (
+            <div className="card card-pad" style={{ marginBottom: 10 }}>
+              <div className="pa-eyebrow" style={{ marginBottom: 8 }}>{t('signLabel')} · {num(sub.signs.length)}</div>
+              {sub.signs.map((s, i) => (
+                <div key={i} className="between" style={{ marginTop: i ? 8 : 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{signName(s.id, lang)}</span>
+                  <span className="badge risk-medium">{t('sev_' + s.sev)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {sub.meds && sub.meds.length > 0 && (
+            <div className="card card-pad" style={{ marginBottom: 10 }}>
+              <div className="pa-eyebrow" style={{ marginBottom: 8 }}>{t('dailyMeds')} · {num(sub.meds.length)}</div>
+              {sub.meds.map((m, i) => (
+                <div key={i} className="between" style={{ marginTop: i ? 8 : 0 }}>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{m.drugId ? medName(m.drugId, lang) : m.drugName}{m.dose ? ' · ' + m.dose : ''}</span>
+                  <span className="pa-cap">{routeName(m.routeId, lang)} · {num(m.days)}d</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {sub.lesions.length > 0 && (
             <div className="card card-pad" style={{ marginBottom: 10 }}>

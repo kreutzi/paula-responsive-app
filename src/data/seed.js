@@ -206,6 +206,48 @@ export const LESION_ORGANS = [
   ] },
 ];
 
+// ---- user roles (confirmed 24 Jun: two distinct accounts) ----
+// 'farm'   → farm staff, captures in-house signs (farm observations)
+// 'doctor' → captures post-mortem lesions + doctor-only clinical inputs (vaccination, medication)
+export const ROLES = ['farm', 'doctor'];
+
+// ---- controlled vocabulary: administration routes (shared by meds + vaccines) ----
+export const ROUTES = [
+  { id: 'water', en: 'Drinking water', ar: 'ماء الشرب' },
+  { id: 'inject', en: 'Injection', ar: 'حقن' },
+  { id: 'spray', en: 'Spray', ar: 'رذاذ' },
+  { id: 'eye', en: 'Eye / nostril drop', ar: 'تقطير بالعين/الأنف' },
+  { id: 'feed', en: 'In feed', ar: 'في العلف' },
+];
+
+// ---- controlled vocabulary: medications (Daily Medication input, house-level) ----
+export const MEDICATIONS = [
+  { id: 'med-flor', en: 'Florfenicol', ar: 'فلورفينيكول' },
+  { id: 'med-coli', en: 'Colistin', ar: 'كوليستين' },
+  { id: 'med-amox', en: 'Amoxicillin', ar: 'أموكسيسيلين' },
+  { id: 'med-enro', en: 'Enrofloxacin', ar: 'إنروفلوكساسين' },
+  { id: 'med-tylo', en: 'Tylosin', ar: 'تايلوسين' },
+  { id: 'med-vit', en: 'Vitamins / electrolytes', ar: 'فيتامينات / إلكتروليتات' },
+];
+
+// ---- controlled vocabulary: vaccines (Vaccination Program input, farm-level) ----
+export const VACCINES = [
+  { id: 'vac-nd', en: 'Newcastle (ND)', ar: 'نيوكاسل (ND)' },
+  { id: 'vac-ib', en: 'Infectious Bronchitis (IB)', ar: 'الالتهاب الشعبي (IB)' },
+  { id: 'vac-ndib', en: 'ND + IB combo', ar: 'ND + IB مدمج' },
+  { id: 'vac-ibd', en: 'Gumboro (IBD)', ar: 'الجمبورو (IBD)' },
+  { id: 'vac-ai', en: 'Avian Influenza H9', ar: 'إنفلونزا الطيور H9' },
+];
+
+// ---- initial vaccination programs, keyed by farm (doctor-maintained, farm-level) ----
+export const INITIAL_VACCINATIONS = {
+  wadi: [
+    { uid: 'vx-w1', vaccineId: 'vac-ndib', ageDay: 7, routeId: 'eye' },
+    { uid: 'vx-w2', vaccineId: 'vac-ibd', ageDay: 14, routeId: 'water' },
+    { uid: 'vx-w3', vaccineId: 'vac-ai', ageDay: 21, routeId: 'inject' },
+  ],
+};
+
 // ---- Paula alerts / notifications ----
 export const NOTIFICATIONS = [
   { id: 'n1', farmId: 'wadi', houseId: 'wadi-h4', type: { en: 'Critical mortality risk', ar: 'خطر نفوق حرج' }, level: 'critical', minAgo: 22, unread: true },
@@ -257,3 +299,10 @@ export const SIGN_BY_ID = {};
 SIGN_CATEGORIES.forEach((c) => c.items.forEach((s) => { SIGN_BY_ID[s.id] = { ...s, category: c.key }; }));
 export const LESION_BY_ID = {};
 LESION_ORGANS.forEach((o) => o.items.forEach((l) => { LESION_BY_ID[l.id] = { ...l, organ: o.key }; }));
+
+export const MED_BY_ID = {};
+MEDICATIONS.forEach((m) => { MED_BY_ID[m.id] = m; });
+export const VACCINE_BY_ID = {};
+VACCINES.forEach((v) => { VACCINE_BY_ID[v.id] = v; });
+export const ROUTE_BY_ID = {};
+ROUTES.forEach((r) => { ROUTE_BY_ID[r.id] = r; });

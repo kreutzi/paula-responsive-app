@@ -1,8 +1,9 @@
 import { Screen, Header, TabBar, RiskBadge } from '../components/ui';
 import Icon from '../components/Icon';
 import { useT } from '../i18n/useT';
-import { useStore, selPendingCount, selUnreadCount } from '../store/useStore';
+import { useStore, selPendingCount, selUnreadCount, selRole } from '../store/useStore';
 import { useNav } from '../nav/useNav';
+import { firstFlowRoute } from '../nav/flow';
 import { VET } from '../data/seed';
 import { farmName, houseNo, notifTime, placeLabel, digits, relTime } from '../data/helpers';
 
@@ -14,6 +15,8 @@ export function Home() {
   const draft = useStore((s) => s.draft);
   const pending = useStore(selPendingCount);
   const unread = useStore(selUnreadCount);
+  const role = useStore(selRole);
+  const isDoctor = role === 'doctor';
 
   const recent = [...submissions].sort((a, b) => b.ts - a.ts).slice(0, 3);
   const alerts = notifications.filter((n) => n.level !== 'low').slice(0, 2);
@@ -37,8 +40,14 @@ export function Home() {
             <Icon name="plus" size={22} stroke={2.6} />{t('startVisit')}
           </button>
 
+          {isDoctor && (
+            <button className="btn btn-secondary" style={{ height: 50 }} onClick={() => push('vaccination')}>
+              <Icon name="shield" size={20} stroke={2.3} />{t('vaccination')}
+            </button>
+          )}
+
           {draft && (
-            <div className="card card-pad card-tap row" style={{ gap: 12, borderColor: 'var(--color-primary)', background: 'var(--color-primary-tint)' }} onClick={() => push('signs')}>
+            <div className="card card-pad card-tap row" style={{ gap: 12, borderColor: 'var(--color-primary)', background: 'var(--color-primary-tint)' }} onClick={() => push(firstFlowRoute(role))}>
               <div className="rowicon" style={{ background: 'var(--color-primary)', color: '#fff' }}><Icon name="edit" size={19} /></div>
               <div className="grow">
                 <div style={{ fontWeight: 700, fontSize: 14 }}>{placeLabel(draft.farmId, draft.houseId, t, lang)}</div>

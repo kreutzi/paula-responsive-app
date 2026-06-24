@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Screen, Header, TabBar, Button, Switch, Chip, RiskBadge, Empty } from '../components/ui';
 import Icon from '../components/Icon';
 import { useT } from '../i18n/useT';
-import { useStore, selPendingCount, selUnreadCount } from '../store/useStore';
+import { useStore, selPendingCount, selUnreadCount, selRole } from '../store/useStore';
 import { useNav } from '../nav/useNav';
 import { VET, FARMS } from '../data/seed';
 import { farmName, farmRegion, houseNo, notifTime } from '../data/helpers';
@@ -32,6 +32,8 @@ export function Settings() {
   const signOut = useStore((s) => s.signOut);
   const clearSyncedCache = useStore((s) => s.clearSyncedCache);
   const resetDemo = useStore((s) => s.resetDemo);
+  const role = useStore(selRole);
+  const isDoctor = role === 'doctor';
 
   const storage = (submissions.length * 6 + 12);
 
@@ -42,7 +44,7 @@ export function Settings() {
         <div className="body-inner">
           <div className="card card-pad row" style={{ gap: 14, marginBottom: 14 }}>
             <div className="center" style={{ width: 54, height: 54, borderRadius: 27, background: 'var(--color-primary)', color: '#fff', fontWeight: 800, fontSize: 19, flex: '0 0 auto' }}>{VET.initials}</div>
-            <div className="grow"><div style={{ fontWeight: 800, fontSize: 16 }}>{lang === 'ar' ? VET.nameAr : VET.name}</div><div className="pa-cap">{t('fieldVetRole')} · {t('farmsAssigned', { n: FARMS.length })}</div></div>
+            <div className="grow"><div style={{ fontWeight: 800, fontSize: 16 }}>{lang === 'ar' ? VET.nameAr : VET.name}</div><div className="pa-cap">{t(isDoctor ? 'roleDoctor' : 'roleFarm')} · {t(isDoctor ? 'roleDoctorScope' : 'roleFarmScope')}</div></div>
           </div>
 
           <div className="pa-eyebrow" style={{ margin: '2px 4px 8px' }}>{t('language')}</div>
@@ -57,6 +59,12 @@ export function Settings() {
             <SetRow icon="activity" label={t('alertThresholds')} value={t('perFarm')} />
             <SetRow icon="database" label={t('offlineStorage')} value={`${num(storage)} MB`} />
           </div>
+
+          {isDoctor && (
+            <div className="card" style={{ marginBottom: 14, overflow: 'hidden' }}>
+              <SetRow first icon="shield" label={t('vaccination')} value={t('doctorsOnly')} onClick={() => push('vaccination')} />
+            </div>
+          )}
 
           <div className="card" style={{ marginBottom: 14, overflow: 'hidden' }}>
             <SetRow first icon="user" label={t('userConfig')} onClick={() => push('userConfig')} />
@@ -169,7 +177,7 @@ export function UserConfig() {
   const { t, lang, num } = useT();
   const { pop } = useNav();
   const toast = useStore((s) => s.toast);
-  const [role, setRole] = useState('roleFieldVet');
+  const [role, setRole] = useState('roleDoctor');
   const [locations, setLocations] = useState({ 'Beni Suef': true, 'Damietta': true, 'Giza': false });
   const [openFarm, setOpenFarm] = useState('wadi');
   const [selected, setSelected] = useState(() => new Set(['wadi-h2', 'wadi-h4', 'wadi-h6', ...FARMS.find((f) => f.id === 'nile').houses.map((h) => h.id)]));
@@ -209,8 +217,8 @@ export function UserConfig() {
 
           <div className="pa-eyebrow" style={{ margin: '2px 2px 7px' }}>{t('roleLabel')}</div>
           <div className="segmented on-surface" style={{ marginBottom: 14 }}>
-            {['roleFieldVet', 'roleSupervisor', 'roleAdmin'].map((r) => (
-              <button key={r} className={role === r ? 'on' : ''} onClick={() => setRole(r)} style={{ height: 36, fontSize: 12.5 }}>{t(r)}</button>
+            {['roleFarm', 'roleDoctor'].map((r) => (
+              <button key={r} className={role === r ? 'on' : ''} onClick={() => setRole(r)} style={{ height: 38, fontSize: 13 }}>{t(r)}</button>
             ))}
           </div>
 

@@ -1,4 +1,4 @@
-import { FARM_BY_ID, HOUSE_BY_ID, SIGN_BY_ID, LESION_BY_ID } from './seed';
+import { FARM_BY_ID, HOUSE_BY_ID, SIGN_BY_ID, LESION_BY_ID, MED_BY_ID, VACCINE_BY_ID, ROUTE_BY_ID } from './seed';
 import { toArDigits } from '../i18n/useT';
 
 export const farmName = (id, lang) => { const f = FARM_BY_ID[id]; return f ? (lang === 'ar' ? f.nameAr : f.name) : ''; };
@@ -7,6 +7,9 @@ export const houseNo = (id) => { const h = HOUSE_BY_ID[id]; return h ? h.n : '';
 export const house = (id) => HOUSE_BY_ID[id];
 export const signName = (id, lang) => { const s = SIGN_BY_ID[id]; return s ? (lang === 'ar' ? s.ar : s.en) : id; };
 export const lesionName = (id, lang) => { const l = LESION_BY_ID[id]; return l ? (lang === 'ar' ? l.ar : l.en) : id; };
+export const medName = (id, lang) => { const m = MED_BY_ID[id]; return m ? (lang === 'ar' ? m.ar : m.en) : id; };
+export const vaccineName = (id, lang) => { const v = VACCINE_BY_ID[id]; return v ? (lang === 'ar' ? v.ar : v.en) : id; };
+export const routeName = (id, lang) => { const r = ROUTE_BY_ID[id]; return r ? (lang === 'ar' ? r.ar : r.en) : id; };
 export const digits = (s, lang) => (lang === 'ar' ? toArDigits(String(s)) : String(s));
 
 // localize relative date strings ("Today, 08:14" → "اليوم، ٠٨:١٤")

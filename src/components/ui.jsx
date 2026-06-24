@@ -2,6 +2,7 @@ import Icon from './Icon';
 import { useT } from '../i18n/useT';
 import { useNav } from '../nav/useNav';
 import { useStore, selPendingCount, selUnreadCount } from '../store/useStore';
+import { FLOW, STEP_LABELS } from '../nav/flow';
 
 /* ---------- Screen shell (status bar + body + home indicator) ---------- */
 export function StatusBar({ light, bg }) {
@@ -147,18 +148,22 @@ export function Chip({ children, on, icon, onClick }) {
   );
 }
 
-/* ---------- Progress steps ---------- */
-export function Steps({ current = 0 }) {
+/* ---------- Progress steps (role-aware) ---------- */
+export function Steps({ route, current }) {
   const { t } = useT();
-  const labels = [t('signLabel'), t('lesionLabel'), t('notesLabel'), t('review')];
+  const role = useStore((s) => s.session.role) || 'farm';
+  const seq = FLOW[role] || FLOW.farm;
+  const labelKeys = STEP_LABELS[role] || STEP_LABELS.farm;
+  const cur = current != null ? current : Math.max(0, seq.indexOf(route));
+  const labels = labelKeys.map((k) => t(k));
   return (
     <div className="steps">
       {labels.map((l, i) => (
         <span key={i} style={{ display: 'contents' }}>
-          <div className={'step ' + (i < current ? 'done' : i === current ? 'current' : '')}>
-            <span className="dotn">{i < current ? <Icon name="check" size={13} stroke={3} /> : (i + 1)}</span>
+          <div className={'step ' + (i < cur ? 'done' : i === cur ? 'current' : '')}>
+            <span className="dotn">{i < cur ? <Icon name="check" size={13} stroke={3} /> : (i + 1)}</span>
           </div>
-          {i < labels.length - 1 && <div className={'step-line' + (i < current ? ' done' : '')} />}
+          {i < labels.length - 1 && <div className={'step-line' + (i < cur ? ' done' : '')} />}
         </span>
       ))}
     </div>

@@ -7,17 +7,19 @@ import Sheets from './components/Sheets';
 import { Splash, Login, SSO } from './screens/auth';
 import { Home } from './screens/home';
 import { FarmSelect, Scan, VisitOverview } from './screens/visit';
-import { Signs, Lesions, Camera, PhotoReview, Notes, Summary, Confirm } from './screens/observe';
+import { Signs, Lesions, Medication, Camera, PhotoReview, Notes, Summary, Confirm } from './screens/observe';
 import { Queue, History, Detail } from './screens/records';
 import { Prediction, TestResults } from './screens/paula';
 import { Settings, Notifications, ErrorState, UserConfig } from './screens/system';
+import { Vaccination } from './screens/clinical';
 
 const ROUTES = {
   splash: Splash, login: Login, sso: SSO, home: Home,
   farmSelect: FarmSelect, scan: Scan, visitOverview: VisitOverview,
-  signs: Signs, lesions: Lesions, camera: Camera, photoReview: PhotoReview, notes: Notes, summary: Summary, confirm: Confirm,
+  signs: Signs, lesions: Lesions, medication: Medication, camera: Camera, photoReview: PhotoReview, notes: Notes, summary: Summary, confirm: Confirm,
   queue: Queue, visits: History, alerts: Notifications, settings: Settings, detail: Detail,
   prediction: Prediction, testResults: TestResults, error: ErrorState, userConfig: UserConfig,
+  vaccination: Vaccination,
 };
 
 const NAT_W = 402, NAT_H = 866;
